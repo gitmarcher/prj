@@ -86,6 +86,14 @@ func buildContent(m *project.Meta) string {
 		sb.WriteString("\n\n")
 	}
 
+	sb.WriteString("## Engineering Principles\n\n")
+	sb.WriteString("- Prioritize correctness, simplicity, robustness, maintainability, and scalability over minimizing implementation effort.\n")
+	sb.WriteString("- Do not optimize for the smallest diff or the fewest files changed.\n")
+	sb.WriteString("- Prefer the solution that best fits the project's long-term architecture, even if it requires more work.\n")
+	sb.WriteString("- Use `requirements.md`, `project.md`, and `decisions.md` as the source of truth when making implementation decisions.\n")
+	sb.WriteString("- If a proposed change conflicts with an existing architectural decision, stop and explain the conflict instead of silently proceeding.\n")
+	sb.WriteString("- When multiple solutions are viable, briefly explain the trade-offs and recommend the one that best supports the long-term health of the system.\n\n")
+
 	sb.WriteString("## Getting Started\n\n")
 	sb.WriteString("Before beginning any work in this project:\n\n")
 	sb.WriteString("1. Check whether `.prj/project.md` exists.\n")
