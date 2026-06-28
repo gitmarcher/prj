@@ -10,19 +10,43 @@ import (
 	"go.yaml.in/yaml/v3"
 )
 
+// RepoAddition records a repository that was added after initial project creation.
+type RepoAddition struct {
+	Name    string    `yaml:"name"`
+	Role    string    `yaml:"role"`
+	Reason  string    `yaml:"reason"`
+	AddedAt time.Time `yaml:"added_at"`
+}
+
 // Meta holds all project metadata.
 type Meta struct {
-	Name      string    `yaml:"name"`
-	Source    string    `yaml:"source"`
-	Branch    string    `yaml:"branch"`
-	Primary   []string  `yaml:"primary"`
-	Secondary []string  `yaml:"secondary,omitempty"`
-	Intent    string    `yaml:"intent"`
-	Docs      []string  `yaml:"docs,omitempty"`
-	Jira      []string  `yaml:"jira,omitempty"`
-	Slack     string    `yaml:"slack,omitempty"`
-	Notes     string    `yaml:"notes,omitempty"`
-	CreatedAt time.Time `yaml:"created_at"`
+	Name      string         `yaml:"name"`
+	Source    string         `yaml:"source"`
+	Branch    string         `yaml:"branch"`
+	Primary   []string       `yaml:"primary"`
+	Secondary []string       `yaml:"secondary,omitempty"`
+	Intent    string         `yaml:"intent"`
+	Docs      []string       `yaml:"docs,omitempty"`
+	Jira      []string       `yaml:"jira,omitempty"`
+	Slack     string         `yaml:"slack,omitempty"`
+	Notes     string         `yaml:"notes,omitempty"`
+	Additions []RepoAddition `yaml:"additions,omitempty"`
+	CreatedAt time.Time      `yaml:"created_at"`
+}
+
+// HasRepo returns true if name already exists in Primary or Secondary.
+func (m *Meta) HasRepo(name string) bool {
+	for _, r := range m.Primary {
+		if r == name {
+			return true
+		}
+	}
+	for _, r := range m.Secondary {
+		if r == name {
+			return true
+		}
+	}
+	return false
 }
 
 // WorkspaceDir returns the full path of the project workspace directory.

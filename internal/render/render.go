@@ -227,6 +227,13 @@ func printKnowledge(ps *status.ProjectStatus) {
 			fmt.Printf("  %s✗%s  %-22s%smissing%s\n", red, reset, kf.Name, gray, reset)
 			continue
 		}
+		// project.md is additionally marked ⚠ when repos were added after it was written
+		if kf.Name == "project.md" && len(ps.StaleAdditions) > 0 {
+			fmt.Printf("  %s⚠%s  %-22s%slast updated %s  ·  %d repo%s added since last analysis%s\n",
+				yellow, reset, kf.Name, yellow, timeAgo(kf.ModTime),
+				len(ps.StaleAdditions), plural(len(ps.StaleAdditions)), reset)
+			continue
+		}
 		if kf.IsStale {
 			fmt.Printf("  %s~%s  %-22s%slast updated %s  (consider refreshing)%s\n",
 				yellow, reset, kf.Name, yellow, timeAgo(kf.ModTime), reset)
@@ -235,6 +242,20 @@ func printKnowledge(ps *status.ProjectStatus) {
 				green, reset, kf.Name, dim, timeAgo(kf.ModTime), reset)
 		}
 	}
+
+	if len(ps.StaleAdditions) > 0 {
+		fmt.Println()
+		fmt.Printf("  %s%sRepositories added since last analysis%s\n", bold, yellow, reset)
+		for _, a := range ps.StaleAdditions {
+			fmt.Printf("    %s%-26s%s %s%-10s%s  %s%s%s\n",
+				bold, a.Name, reset,
+				gray, "("+a.Role+")", reset,
+				dim, a.Reason, reset)
+		}
+		fmt.Printf("\n  %sRun /project-analyzer to refresh the project's understanding.%s\n", gray, reset)
+		return
+	}
+
 	// If project.md is missing, print an action hint
 	for _, kf := range ps.Knowledge {
 		if kf.Name == "project.md" && !kf.Exists {

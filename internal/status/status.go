@@ -33,9 +33,10 @@ type KnowledgeFile struct {
 }
 
 type ProjectStatus struct {
-	Meta      *project.Meta
-	Repos     []*RepoStatus
-	Knowledge []*KnowledgeFile
+	Meta             *project.Meta
+	Repos            []*RepoStatus
+	Knowledge        []*KnowledgeFile
+	StaleAdditions   []project.RepoAddition // repos added after project.md was last written
 }
 
 // Collect gathers status for all repos in the project concurrently.
@@ -66,11 +67,13 @@ func Collect(workspaceDir string, meta *project.Meta, knowledgeAgeDays int) *Pro
 	wg.Wait()
 
 	knowledge := collectKnowledge(workspaceDir, knowledgeAgeDays)
+	stale := staleAdditions(meta, filepath.Join(workspaceDir, ".prj"))
 
 	return &ProjectStatus{
-		Meta:      meta,
-		Repos:     repos,
-		Knowledge: knowledge,
+		Meta:           meta,
+		Repos:          repos,
+		Knowledge:      knowledge,
+		StaleAdditions: stale,
 	}
 }
 
@@ -113,6 +116,25 @@ func collectRepo(repoDir, name, role, configuredBranch string, ghOK bool) *RepoS
 	}
 
 	return rs
+}
+
+func staleAdditions(meta *project.Meta, prjDir string) []project.RepoAddition {
+	if len(meta.Additions) == 0 {
+		return nil
+	}
+	info, err := os.Stat(filepath.Join(prjDir, "project.md"))
+	if err != nil {
+		// project.md missing — all additions are unanalyzed
+		return meta.Additions
+	}
+	cut := info.ModTime()
+	var out []project.RepoAddition
+	for _, a := range meta.Additions {
+		if a.AddedAt.After(cut) {
+			out = append(out, a)
+		}
+	}
+	return out
 }
 
 func collectKnowledge(workspaceDir string, ageDays int) []*KnowledgeFile {

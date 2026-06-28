@@ -97,10 +97,13 @@ func buildContent(m *project.Meta) string {
 	sb.WriteString("## Getting Started\n\n")
 	sb.WriteString("Before beginning any work in this project:\n\n")
 	sb.WriteString("1. Check whether `.prj/project.md` exists.\n")
-	sb.WriteString("2. If it does **not** exist, say:\n\n")
-	sb.WriteString("   > \"I noticed this project has not been analyzed yet. Would you like me to build an understanding of the project before we begin?\"\n\n")
-	sb.WriteString("3. If the user agrees, run `/project-analyzer`.\n\n")
-	sb.WriteString("When the implementation is ready for review, run `/project-reviewer`.\n\n")
+	sb.WriteString("   - If it does **not** exist, say: \"I noticed this project has not been analyzed yet. Would you like me to build an understanding of the project before we begin?\"\n")
+	sb.WriteString("   - If the user agrees, run `/project-analyzer`.\n")
+	sb.WriteString("2. If `.prj/project.md` exists, read `.prj/config.yaml` and check the `additions` list.\n")
+	sb.WriteString("   - Compare each `additions[].added_at` timestamp against the modification time of `.prj/project.md`.\n")
+	sb.WriteString("   - If any addition is newer than `project.md`, say: \"New repositories have been added since the last project analysis. Would you like to refresh the project's understanding?\"\n")
+	sb.WriteString("   - If the user agrees, run `/project-analyzer`.\n")
+	sb.WriteString("3. When the implementation is ready for review, run `/project-reviewer`.\n\n")
 
 	sb.WriteString(fmt.Sprintf("---\n_Created: %s_\n", m.CreatedAt.Format("2006-01-02 15:04:05")))
 
