@@ -58,6 +58,34 @@ func WriteConfig(workspaceDir string, m *Meta) error {
 	return nil
 }
 
+// FindRoot walks up from start looking for a .prj/config.yaml directory marker.
+func FindRoot(start string) (string, error) {
+	dir := start
+	for {
+		if _, err := os.Stat(filepath.Join(dir, ".prj", "config.yaml")); err == nil {
+			return dir, nil
+		}
+		parent := filepath.Dir(dir)
+		if parent == dir {
+			return "", fmt.Errorf("not inside a prj workspace — no .prj/config.yaml found\nRun this command from within your project directory.")
+		}
+		dir = parent
+	}
+}
+
+// LoadMeta reads and parses .prj/config.yaml from workspaceDir.
+func LoadMeta(workspaceDir string) (*Meta, error) {
+	data, err := os.ReadFile(filepath.Join(workspaceDir, ".prj", "config.yaml"))
+	if err != nil {
+		return nil, fmt.Errorf("cannot read .prj/config.yaml: %w", err)
+	}
+	var m Meta
+	if err := yaml.Unmarshal(data, &m); err != nil {
+		return nil, fmt.Errorf("cannot parse .prj/config.yaml: %w", err)
+	}
+	return &m, nil
+}
+
 func marshalYAML(v any) ([]byte, error) {
 	var sb strings.Builder
 	enc := yaml.NewEncoder(&sb)

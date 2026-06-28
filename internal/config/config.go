@@ -13,8 +13,9 @@ type Source struct {
 }
 
 type Config struct {
-	Workspace string            `mapstructure:"workspace"`
-	Sources   map[string]Source `mapstructure:"sources"`
+	Workspace        string            `mapstructure:"workspace"`
+	Sources          map[string]Source `mapstructure:"sources"`
+	KnowledgeAgeDays int               `mapstructure:"knowledge_age_days"`
 }
 
 func Load() (*Config, error) {
@@ -34,6 +35,7 @@ func Load() (*Config, error) {
 	v.AddConfigPath(cfgDir)
 
 	v.SetDefault("workspace", filepath.Join(home, "Projects"))
+	v.SetDefault("knowledge_age_days", 7)
 
 	cfgFile := filepath.Join(cfgDir, "config.yaml")
 	if _, err := os.Stat(cfgFile); os.IsNotExist(err) {
