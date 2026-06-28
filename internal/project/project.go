@@ -20,18 +20,19 @@ type RepoAddition struct {
 
 // Meta holds all project metadata.
 type Meta struct {
-	Name      string         `yaml:"name"`
-	Source    string         `yaml:"source"`
-	Branch    string         `yaml:"branch"`
-	Primary   []string       `yaml:"primary"`
-	Secondary []string       `yaml:"secondary,omitempty"`
-	Intent    string         `yaml:"intent"`
-	Docs      []string       `yaml:"docs,omitempty"`
-	Jira      []string       `yaml:"jira,omitempty"`
-	Slack     string         `yaml:"slack,omitempty"`
-	Notes     string         `yaml:"notes,omitempty"`
-	Additions []RepoAddition `yaml:"additions,omitempty"`
-	CreatedAt time.Time      `yaml:"created_at"`
+	SchemaVersion int            `yaml:"schema_version"`
+	Name          string         `yaml:"name"`
+	Source        string         `yaml:"source"`
+	Branch        string         `yaml:"branch"`
+	Primary       []string       `yaml:"primary"`
+	Secondary     []string       `yaml:"secondary,omitempty"`
+	Intent        string         `yaml:"intent"`
+	Docs          []string       `yaml:"docs,omitempty"`
+	Jira          []string       `yaml:"jira,omitempty"`
+	Slack         string         `yaml:"slack,omitempty"`
+	Notes         string         `yaml:"notes,omitempty"`
+	Additions     []RepoAddition `yaml:"additions,omitempty"`
+	CreatedAt     time.Time      `yaml:"created_at"`
 }
 
 // HasRepo returns true if name already exists in Primary or Secondary.
@@ -65,6 +66,9 @@ func CreateWorkspace(workspace, name string) (string, error) {
 
 // WriteConfig writes .prj/config.yaml inside workspaceDir.
 func WriteConfig(workspaceDir string, m *Meta) error {
+	if m.SchemaVersion == 0 {
+		m.SchemaVersion = 1
+	}
 	prjDir := filepath.Join(workspaceDir, ".prj")
 	if err := os.MkdirAll(prjDir, 0o755); err != nil {
 		return fmt.Errorf("cannot create .prj directory: %w", err)
