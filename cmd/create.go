@@ -147,8 +147,11 @@ func runCreate(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	// 6. Generate CLAUDE.md
+	// 6. Generate CLAUDE.md and install skills
 	if err := claude.WriteContextFile(workspaceDir, meta); err != nil {
+		return err
+	}
+	if err := claude.WriteSkill(workspaceDir); err != nil {
 		return err
 	}
 

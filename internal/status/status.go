@@ -119,10 +119,11 @@ func collectKnowledge(workspaceDir string, ageDays int) []*KnowledgeFile {
 	names := []string{"project.md", "decisions.md", "open_questions.md"}
 	files := make([]*KnowledgeFile, len(names))
 	threshold := time.Duration(ageDays) * 24 * time.Hour
+	prjDir := filepath.Join(workspaceDir, ".prj")
 
 	for i, name := range names {
 		kf := &KnowledgeFile{Name: name}
-		info, err := os.Stat(filepath.Join(workspaceDir, name))
+		info, err := os.Stat(filepath.Join(prjDir, name))
 		if err == nil {
 			kf.Exists = true
 			kf.ModTime = info.ModTime()
