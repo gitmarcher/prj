@@ -63,43 +63,18 @@ func buildContent(m *project.Meta) string {
 	sb.WriteString("\n\n")
 
 	sb.WriteString("## Repositories\n\n")
-	sb.WriteString("### Primary\n\n")
+	sb.WriteString(fmt.Sprintf("Branch: `%s`\n\n", m.Branch))
+	sb.WriteString("**Primary** (expected to contain implementation changes):\n\n")
 	for _, r := range m.Primary {
-		sb.WriteString(fmt.Sprintf("- `%s` (branch: `%s`)\n", r, m.Branch))
+		sb.WriteString(fmt.Sprintf("- `%s`\n", r))
 	}
 	if len(m.Secondary) > 0 {
-		sb.WriteString("\n### Secondary\n\n")
+		sb.WriteString("\n**Secondary** (reference only — not expected to change):\n\n")
 		for _, r := range m.Secondary {
 			sb.WriteString(fmt.Sprintf("- `%s`\n", r))
 		}
 	}
 	sb.WriteString("\n")
-
-	if len(m.Docs) > 0 {
-		sb.WriteString("## Documentation\n\n")
-		for _, d := range m.Docs {
-			sb.WriteString(fmt.Sprintf("- %s\n", d))
-		}
-		sb.WriteString("\n")
-	}
-
-	if len(m.Jira) > 0 {
-		sb.WriteString("## Jira\n\n")
-		for _, j := range m.Jira {
-			sb.WriteString(fmt.Sprintf("- %s\n", j))
-		}
-		sb.WriteString("\n")
-	}
-
-	if m.Slack != "" {
-		sb.WriteString(fmt.Sprintf("## Slack\n\n%s\n\n", m.Slack))
-	}
-
-	if m.Notes != "" {
-		sb.WriteString("## Notes\n\n")
-		sb.WriteString(strings.TrimSpace(m.Notes))
-		sb.WriteString("\n\n")
-	}
 
 	sb.WriteString("## Engineering Principles\n\n")
 	sb.WriteString("- Prioritize correctness, simplicity, robustness, maintainability, and scalability over minimizing implementation effort.\n")
@@ -110,9 +85,8 @@ func buildContent(m *project.Meta) string {
 	sb.WriteString("- When multiple solutions are viable, briefly explain the trade-offs and recommend the one that best supports the long-term health of the system.\n\n")
 
 	sb.WriteString("## Getting Started\n\n")
-	sb.WriteString("Before beginning any work in this project:\n\n")
-	sb.WriteString("1. Check whether `.prj/project.md` exists. If not, offer to run `/project-analyzer` before starting.\n")
-	sb.WriteString("2. Check the `additions` list in `.prj/config.yaml`. If any repos were added after `project.md` was last written, offer to re-run `/project-analyzer` to refresh the project's understanding.\n")
+	sb.WriteString("1. If the project has not yet been analyzed, offer to run `/project-analyzer` before starting.\n")
+	sb.WriteString("2. If repositories have been added since the last project analysis, offer to re-run `/project-analyzer`.\n")
 	sb.WriteString("3. When the implementation is ready for review, run `/project-reviewer`.\n\n")
 
 	return sb.String()
