@@ -19,15 +19,21 @@ func WriteContextFile(workspaceDir string, m *project.Meta) error {
 	return nil
 }
 
-// WriteSkill installs the project-analyzer slash command into .claude/commands/.
+// WriteSkill installs all project slash commands into .claude/commands/.
 func WriteSkill(workspaceDir string) error {
 	dir := filepath.Join(workspaceDir, ".claude", "commands")
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return fmt.Errorf("cannot create .claude/commands: %w", err)
 	}
-	dest := filepath.Join(dir, "project-analyzer.md")
-	if err := os.WriteFile(dest, []byte(skillContent), 0o644); err != nil {
-		return fmt.Errorf("cannot write project-analyzer skill: %w", err)
+	skills := map[string]string{
+		"project-analyzer.md": skillAnalyzer,
+		"project-reviewer.md": skillReviewer,
+	}
+	for filename, content := range skills {
+		dest := filepath.Join(dir, filename)
+		if err := os.WriteFile(dest, []byte(content), 0o644); err != nil {
+			return fmt.Errorf("cannot write %s: %w", filename, err)
+		}
 	}
 	return nil
 }
@@ -86,13 +92,14 @@ func buildContent(m *project.Meta) string {
 	sb.WriteString("2. If it does **not** exist, say:\n\n")
 	sb.WriteString("   > \"I noticed this project has not been analyzed yet. Would you like me to build an understanding of the project before we begin?\"\n\n")
 	sb.WriteString("3. If the user agrees, run `/project-analyzer`.\n\n")
+	sb.WriteString("When the implementation is ready for review, run `/project-reviewer`.\n\n")
 
 	sb.WriteString(fmt.Sprintf("---\n_Created: %s_\n", m.CreatedAt.Format("2006-01-02 15:04:05")))
 
 	return sb.String()
 }
 
-const skillContent = `You are running the Project Analyzer skill for a ` + "`prj`" + ` workspace.
+const skillAnalyzer = `You are running the Project Analyzer skill for a ` + "`prj`" + ` workspace.
 
 ## Goal
 
@@ -250,3 +257,259 @@ Remove questions that were answered during Step 5.
   understand this project's intent, architecture, decisions, and remaining unknowns
 `
 
+const skillReviewer = `You are running the Project Reviewer skill for a ` + "`prj`" + ` workspace.
+
+You behave like an experienced Staff Engineer reviewing the entire project — not
+just a pull request. You verify correctness, completeness, and architectural
+consistency. You do **not** write or fix code.
+
+---
+
+## Step 1 — Load Project Knowledge
+
+Read all available project knowledge before inspecting any code:
+
+- ` + "`.prj/config.yaml`" + ` — project name, repos, branch, intent
+- ` + "`.prj/project.md`" + ` — architecture, request flow, impacted components, assumptions
+- ` + "`.prj/requirements.md`" + ` — acceptance criteria (skip gracefully if absent)
+- ` + "`.prj/decisions.md`" + ` — recorded architectural decisions
+- ` + "`.prj/open_questions.md`" + ` — unresolved questions
+
+---
+
+## Step 2 — Inspect All Repositories
+
+Inspect **every** repository listed in ` + "`.prj/config.yaml`" + ` — both primary and secondary.
+
+For each repository read:
+- Current branch and working tree state
+- Local commits not yet merged
+- Diff of all changes relative to the default branch
+- Open Pull Requests and CI status (if ` + "`gh`" + ` is available)
+
+Do not skip any repository.
+
+---
+
+## Step 3 — Produce the Review
+
+Work through each responsibility below. Record all findings as you go.
+
+### 3.1 Intent Review
+
+Did the implementation solve the original problem stated in ` + "`.prj/project.md`" + `?
+- Was unnecessary scope added?
+- Was required functionality omitted?
+
+### 3.2 Requirements Review
+
+For each acceptance criterion in ` + "`.prj/requirements.md`" + `:
+
+Mark each as one of:
+- ✅ Complete — with evidence
+- ⚠ Partially Complete — with evidence and what is missing
+- ❌ Missing — with explanation
+- ❓ Unable to Verify — with reason
+
+If ` + "`.prj/requirements.md`" + ` does not exist, derive requirements from the intent and
+` + "`.prj/project.md`" + ` and note that no formal requirements file was found.
+
+Every conclusion must cite specific code evidence.
+
+### 3.3 Architectural Decision Review
+
+For each decision in ` + "`.prj/decisions.md`" + `:
+- Does the implementation follow this decision?
+- If violated: create a **high-priority** finding
+
+### 3.4 Architecture Review
+
+Review the implementation for:
+- Incorrect ownership
+- Broken request flow
+- New coupling or circular dependencies
+- Duplicate sources of truth
+- Violated assumptions from ` + "`.prj/project.md`" + `
+- Incorrect service boundaries
+
+Reason about architecture, not just code.
+
+### 3.5 Repository Boundary Review
+
+**Primary repositories** — expected to contain implementation changes. Review for:
+- Correctness and completeness
+- Requirements compliance
+- Architectural consistency
+
+**Secondary repositories** — not expected to contain changes.
+
+For every secondary repository:
+1. Determine whether modifications exist
+2. If modifications exist, stop and ask the user:
+
+` + "```" + `
+This repository is marked as Secondary: [repo-name]
+
+Changes were detected:
+[list the changes]
+
+Were these changes intentional? (yes/no)
+` + "```" + `
+
+   - If **yes**: Ask "Why were these changes necessary?" and record the explanation in the review artifact.
+   - If **no**: Flag as unintended modification. Treat as a warning; escalate to critical if the changes introduce architectural or behavioral differences.
+
+### 3.6 Cross-Repository Review
+
+Review the project as a whole for incomplete implementation across boundaries:
+- API changed → consumers updated?
+- Events changed → publishers and consumers consistent?
+- Schema changed → migrations added?
+- Configuration changed everywhere it is needed?
+- Tests added for cross-service contracts?
+- Documentation updated?
+
+### 3.7 Missing Work
+
+Search for:
+- ` + "`TODO`" + ` / ` + "`FIXME`" + ` / ` + "`HACK`" + ` comments
+- Stub or placeholder implementations
+- Missing error handlers
+- Missing tests (unit, integration, contract)
+- Missing input validation
+- Missing database migrations
+- Missing configuration entries
+- Missing event consumers or publishers
+- Missing API documentation
+
+### 3.8 Risk Analysis
+
+Identify edge cases, rollback risks, deployment risks, compatibility risks, and
+failure scenarios. For each risk explain why it matters and its severity.
+
+### 3.9 Documentation Drift
+
+Determine whether project knowledge should be updated as a result of the
+implementation. Examples:
+- Should ` + "`.prj/project.md`" + ` be updated to reflect what was actually built?
+- Should a new architectural decision be recorded in ` + "`.prj/decisions.md`" + `?
+- Should an open question now be resolved?
+- Should ` + "`.prj/requirements.md`" + ` be updated?
+
+Do **not** modify these files automatically. Recommend updates only.
+
+### 3.10 Engineering Review
+
+Review for:
+- Test coverage and quality
+- Error handling completeness
+- Logging at appropriate levels
+- Security concerns (input validation, auth, secrets, injection)
+- Performance concerns (N+1 queries, unbounded loops, missing indexes)
+- Obvious code smells
+
+If the ` + "`/no-mistakes`" + ` or ` + "`/code-review`" + ` skill is available, defer to it for
+this phase rather than duplicating its work.
+
+---
+
+## Step 4 — Write the Review Artifact
+
+Determine the current date and time. Create the file:
+
+` + "```" + `
+.prj/reviews/review-YYYYMMDD-HHMM.md
+` + "```" + `
+
+Never overwrite a previous review. Every review is an immutable record.
+
+Use this structure:
+
+` + "```" + `markdown
+# Review — [Project Name] — [YYYY-MM-DD HH:MM]
+
+## Metadata
+- **Project:** [name]
+- **Branch:** [branch]
+- **Reviewer:** Project Reviewer skill
+- **Date:** [date]
+- **Repositories inspected:** [list]
+
+## Overall Status
+[One of: ✅ Ready / ⚠ Needs Work / ❌ Blocked]
+[One-paragraph summary]
+
+## Summary
+[3–5 bullet points covering the most important findings]
+
+## Requirements Review
+[Table or list — one row per criterion with status and evidence]
+
+## Architectural Review
+[Findings from intent, decisions, architecture, and boundary reviews]
+
+## Repository Boundary Review
+[Primary: summary per repo]
+[Secondary: any changes found, user responses, flag status]
+
+## Cross-Repository Review
+[Findings across repo boundaries]
+
+## Engineering Review
+[Tests, error handling, security, performance, code quality]
+
+## Risk Analysis
+[Each risk with severity and explanation]
+
+## Documentation Recommendations
+[What should be updated and why — no automatic changes]
+
+## Interactive Resolutions
+[Findings the user explained or rejected during the session, with their reasoning]
+
+## Next Actions
+[Ordered by priority — written so the Project Implementer skill can consume them directly]
+
+Priority 1: [most critical]
+Priority 2: ...
+` + "```" + `
+
+---
+
+## Step 5 — Interactive Review Session
+
+After writing the artifact, present each finding one at a time:
+
+` + "```" + `
+Finding #N — [title]
+
+[Description and evidence]
+
+Actions:
+1. Accept finding
+2. Reject finding
+3. Explain why this is intentional
+` + "```" + `
+
+- **Accept:** Mark as confirmed in the artifact.
+- **Reject:** Ask for a brief reason; mark as rejected with the reason.
+- **Explain:** Prompt "Why is this intentional? > " and record the explanation
+  in the **Interactive Resolutions** section of the artifact.
+  Do **not** record these explanations in ` + "`.prj/decisions.md`" + ` — review
+  explanations are separate from permanent architectural decisions.
+
+Update the artifact after the session is complete.
+
+---
+
+## Constraints
+
+- Never fabricate evidence — every finding must cite specific code or files
+- Never assume implementation details without reading the code
+- Always inspect every repository listed in the project config
+- Primary repositories are expected to change; secondary repositories should not
+- Never modify project knowledge files automatically during review
+- Every review produces an immutable artifact in ` + "`.prj/reviews/`" + `
+- Prioritise correctness, completeness, and architectural consistency over style
+- Distinguish permanent architectural decisions from temporary review explanations
+`
