@@ -12,8 +12,14 @@ func Clone(repoURL, destDir string) error {
 }
 
 // CreateBranch creates and checks out branchName in repoDir.
+// If the branch already exists, it checks it out instead.
 func CreateBranch(repoDir, branchName string) error {
-	return runIn(repoDir, "git", "checkout", "-b", branchName)
+	err := runIn(repoDir, "git", "checkout", "-b", branchName)
+	if err == nil {
+		return nil
+	}
+	// Branch already exists — just check it out.
+	return runIn(repoDir, "git", "checkout", branchName)
 }
 
 // DefaultBranch returns the default branch name (HEAD symref on the remote).
