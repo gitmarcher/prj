@@ -32,8 +32,8 @@ var createCmd = &cobra.Command{
 
 func init() {
 	createCmd.Flags().StringVar(&flagSource, "src", "", "Source key defined in config (e.g. carousell)")
-	createCmd.Flags().StringArrayVarP(&flagPrimary, "p", "p", nil, "Primary repositories (feature branch will be created)")
-	createCmd.Flags().StringArrayVarP(&flagSecondary, "s", "s", nil, "Secondary repositories (cloned, no branch change)")
+	createCmd.Flags().StringSliceVarP(&flagPrimary, "p", "p", nil, "Primary repositories, comma-separated (feature branch will be created)")
+	createCmd.Flags().StringSliceVarP(&flagSecondary, "s", "s", nil, "Secondary repositories, comma-separated (cloned, no branch change)")
 	createCmd.Flags().StringVarP(&flagBranch, "b", "b", "", "Feature branch name to create on primary repos")
 
 	_ = createCmd.MarkFlagRequired("src")

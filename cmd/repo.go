@@ -32,8 +32,8 @@ var repoAddCmd = &cobra.Command{
 }
 
 func init() {
-	repoAddCmd.Flags().StringArrayVarP(&repoAddPrimary, "p", "p", nil, "Primary repositories to add (feature branch will be created)")
-	repoAddCmd.Flags().StringArrayVarP(&repoAddSecondary, "s", "s", nil, "Secondary repositories to add (reference only)")
+	repoAddCmd.Flags().StringSliceVarP(&repoAddPrimary, "p", "p", nil, "Primary repositories to add, comma-separated (feature branch will be created)")
+	repoAddCmd.Flags().StringSliceVarP(&repoAddSecondary, "s", "s", nil, "Secondary repositories to add, comma-separated (reference only)")
 	repoCmd.AddCommand(repoAddCmd)
 }
 
