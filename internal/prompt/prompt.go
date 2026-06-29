@@ -38,6 +38,29 @@ func AskMultiline(label string) ([]string, error) {
 	return lines, nil
 }
 
+// AskLongText prompts for multi-paragraph text, terminated by a line containing only ".".
+// Safe to paste text that contains blank lines.
+func AskLongText(label string) (string, error) {
+	fmt.Printf("%s\n(paste or type, then enter '.' on its own line when done):\n", label)
+	var lines []string
+	for {
+		line, err := reader.ReadString('\n')
+		if err != nil {
+			// EOF — accept whatever was read
+			if trimmed := strings.TrimSpace(line); trimmed != "" && trimmed != "." {
+				lines = append(lines, trimmed)
+			}
+			break
+		}
+		trimmed := strings.TrimSpace(line)
+		if trimmed == "." {
+			break
+		}
+		lines = append(lines, trimmed)
+	}
+	return strings.TrimSpace(strings.Join(lines, "\n")), nil
+}
+
 // AskOptional is like Ask but prints "(optional)" in the label.
 func AskOptional(label string) (string, error) {
 	return Ask(label + " (optional)")

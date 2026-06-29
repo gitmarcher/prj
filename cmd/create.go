@@ -96,17 +96,15 @@ func runCreate(cmd *cobra.Command, args []string) error {
 	// 4. Interactive questions
 	fmt.Println("\n==> Project context\n")
 
-	intentLines, err := prompt.AskMultiline("Project intent")
+	intent, err := prompt.AskLongText("Project intent")
 	if err != nil {
 		return err
 	}
-	intent := strings.Join(intentLines, "\n")
 
-	doneStateLines, err := prompt.AskMultiline("How will you know it's done?")
+	doneState, err := prompt.AskLongText("How will you know it's done?")
 	if err != nil {
 		return err
 	}
-	doneState := strings.Join(doneStateLines, "\n")
 
 	docs, err := prompt.AskOptionalMultiline("Source documentation (URLs or file paths)")
 	if err != nil {
