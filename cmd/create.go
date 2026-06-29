@@ -101,6 +101,11 @@ func runCreate(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	doneState, err := prompt.Ask("How will you know it's done?")
+	if err != nil {
+		return err
+	}
+
 	docs, err := prompt.AskOptionalMultiline("Source documentation (URLs or file paths)")
 	if err != nil {
 		return err
@@ -136,6 +141,7 @@ func runCreate(cmd *cobra.Command, args []string) error {
 		Primary:   flagPrimary,
 		Secondary: flagSecondary,
 		Intent:    intent,
+		DoneState: doneState,
 		Docs:      docs,
 		Jira:      jira,
 		Slack:     slack,

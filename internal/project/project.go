@@ -27,6 +27,7 @@ type Meta struct {
 	Primary       []string       `yaml:"primary"`
 	Secondary     []string       `yaml:"secondary,omitempty"`
 	Intent        string         `yaml:"intent"`
+	DoneState     string         `yaml:"done_state,omitempty"`
 	Docs          []string       `yaml:"docs,omitempty"`
 	Jira          []string       `yaml:"jira,omitempty"`
 	Slack         string         `yaml:"slack,omitempty"`

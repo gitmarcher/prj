@@ -48,6 +48,11 @@ func buildContent(m *project.Meta) string {
 	sb.WriteString("## Intent\n\n")
 	sb.WriteString(strings.TrimSpace(m.Intent))
 	sb.WriteString("\n\n")
+	if m.DoneState != "" {
+		sb.WriteString("**Done when:** ")
+		sb.WriteString(strings.TrimSpace(m.DoneState))
+		sb.WriteString("\n\n")
+	}
 
 	sb.WriteString("## Repositories\n\n")
 	sb.WriteString(fmt.Sprintf("Branch: `%s`\n\n", m.Branch))
